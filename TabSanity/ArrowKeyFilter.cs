@@ -6,25 +6,25 @@ using Microsoft.VisualStudio.Text.Editor;
 using System;
 using IServiceProvider = System.IServiceProvider;
 
-namespace TabSanity
-{
-	internal class ArrowKeyFilter : KeyFilter
-	{
-		private int? _savedCaretColumn;
-		private ITextSnapshotLine _snapshotLine;
-		private object _activeLock = new object();
-		private bool _allowClearSavedCaretColumn = true;
-		private bool _isActive;
+namespace TabSanity {
+
+	internal class ArrowKeyFilter : KeyFilter {
+
+		int? _savedCaretColumn;
+		ITextSnapshotLine _snapshotLine;
+		object _activeLock = new object();
+		bool _allowClearSavedCaretColumn = true;
+		bool _isActive;
 
 		#region Arrow key constants
-		private const uint ARROW_LEFT = (uint)VSConstants.VSStd2KCmdID.LEFT;
-		private const uint SHIFT_ARROW_LEFT = (uint)VSConstants.VSStd2KCmdID.LEFT_EXT;
-		private const uint ARROW_RIGHT = (uint)VSConstants.VSStd2KCmdID.RIGHT;
-		private const uint SHIFT_ARROW_RIGHT = (uint)VSConstants.VSStd2KCmdID.RIGHT_EXT;
-		private const uint ARROW_UP = (uint)VSConstants.VSStd2KCmdID.UP;
-		private const uint SHIFT_ARROW_UP = (uint)VSConstants.VSStd2KCmdID.UP_EXT;
-		private const uint ARROW_DOWN = (uint)VSConstants.VSStd2KCmdID.DOWN;
-		private const uint SHIFT_ARROW_DOWN = (uint)VSConstants.VSStd2KCmdID.DOWN_EXT;
+		const uint ARROW_LEFT        = (uint)VSConstants.VSStd2KCmdID.LEFT;
+		const uint SHIFT_ARROW_LEFT  = (uint)VSConstants.VSStd2KCmdID.LEFT_EXT;
+		const uint ARROW_RIGHT       = (uint)VSConstants.VSStd2KCmdID.RIGHT;
+		const uint SHIFT_ARROW_RIGHT = (uint)VSConstants.VSStd2KCmdID.RIGHT_EXT;
+		const uint ARROW_UP          = (uint)VSConstants.VSStd2KCmdID.UP;
+		const uint SHIFT_ARROW_UP    = (uint)VSConstants.VSStd2KCmdID.UP_EXT;
+		const uint ARROW_DOWN        = (uint)VSConstants.VSStd2KCmdID.DOWN;
+		const uint SHIFT_ARROW_DOWN  = (uint)VSConstants.VSStd2KCmdID.DOWN_EXT;
 		#endregion Arrow key constants
 
 		public ArrowKeyFilter(DisplayWindowHelper displayHelper, IWpfTextView textView, IServiceProvider provider)
@@ -33,8 +33,7 @@ namespace TabSanity
 			Caret.PositionChanged += CaretOnPositionChanged;
 		}
 
-		private void CaretOnPositionChanged(object sender, CaretPositionChangedEventArgs e)
-		{
+		void CaretOnPositionChanged(object sender, CaretPositionChangedEventArgs e) {
 			if (_allowClearSavedCaretColumn)
 				_savedCaretColumn = null;
 
@@ -44,15 +43,15 @@ namespace TabSanity
 				|| DisplayHelper.IsCompletionActive
 				|| DisplayHelper.IsSignatureHelpActive
 				|| CaretIsWithinCodeRange
-				|| CaretColumn % IndentSize == 0)
+				|| CaretColumn % IndentSize == 0
+			)
 				return;
 
-			lock (_activeLock)
-			{
+			lock (_activeLock) {
+
 				var originalSavedCaretColumn = _savedCaretColumn;
 				var originalSnapshotLine = _snapshotLine;
-				try
-				{
+				try {
 					_isActive = true;
 					_savedCaretColumn = CaretColumn;
 					_snapshotLine = TextView.TextSnapshot.GetLineFromPosition(Caret.Position.BufferPosition);
@@ -63,8 +62,7 @@ namespace TabSanity
 					if (!TextView.Selection.IsEmpty)
 						AdjustTextSelection(0, TextView.Selection.AnchorPoint);
 				}
-				finally
-				{
+				finally {
 					_isActive = false;
 					_savedCaretColumn = originalSavedCaretColumn;
 					_snapshotLine = originalSnapshotLine;
@@ -72,14 +70,12 @@ namespace TabSanity
 			}
 		}
 
-		public override int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
-		{
+		public override int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
 			ThreadHelper.ThrowIfNotOnUIThread();
 			return NextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
 		}
 
-		public override int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
-		{
+		public override int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
 			ThreadHelper.ThrowIfNotOnUIThread();
 			if (nCmdID < ARROW_LEFT
 				|| nCmdID > SHIFT_ARROW_DOWN
@@ -87,20 +83,17 @@ namespace TabSanity
 				|| pguidCmdGroup != VSConstants.VSStd2K
 				|| IsInAutomationFunction
 				|| DisplayHelper.IsCompletionActive
-				|| DisplayHelper.IsSignatureHelpActive)
-			{
+				|| DisplayHelper.IsSignatureHelpActive
+			){
 				_savedCaretColumn = null;
 				return NextTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
 			}
 
-			lock (_activeLock)
-			{
-				try
-				{
+			lock (_activeLock) {
+				try {
 					_isActive = true;
 
-					switch (nCmdID)
-					{
+					switch (nCmdID) {
 						case ARROW_LEFT:
 						case ARROW_RIGHT:
 						case SHIFT_ARROW_LEFT:
@@ -126,13 +119,11 @@ namespace TabSanity
 
 					var caretStartingPosition = Caret.Position.VirtualBufferPosition;
 					var selectionAnchorPoint = TextView.Selection.IsEmpty ? caretStartingPosition : TextView.Selection.AnchorPoint;
-					switch (nCmdID)
-					{
+					switch (nCmdID) {
 						case ARROW_LEFT:
 						case SHIFT_ARROW_LEFT:
 							Caret.MoveToPreviousCaretPosition();
-							if (CaretCharIsASpace)
-							{
+							if (CaretCharIsASpace) {
 								MoveCaretToPreviousTabStop();
 								AdjustTextSelection(nCmdID, selectionAnchorPoint);
 								return VSConstants.S_OK;
@@ -142,8 +133,7 @@ namespace TabSanity
 
 						case ARROW_RIGHT:
 						case SHIFT_ARROW_RIGHT:
-							if (CaretCharIsASpace)
-							{
+							if (CaretCharIsASpace) {
 								Caret.MoveToNextCaretPosition();
 								MoveCaretToNextTabStop();
 								AdjustTextSelection(nCmdID, selectionAnchorPoint);
@@ -153,29 +143,22 @@ namespace TabSanity
 
 						case ARROW_UP:
 						case SHIFT_ARROW_UP:
-							try
-							{
-								_snapshotLine = TextView.TextSnapshot.GetLineFromPosition(
-									Caret.Position.BufferPosition.Subtract(CaretColumn + 1));
+							try {
+								_snapshotLine = TextView.TextSnapshot.GetLineFromPosition( Caret.Position.BufferPosition.Subtract(CaretColumn + 1));
 								MoveCaretToNearestVirtualTabStop();
 							}
-							catch (ArgumentOutOfRangeException)
-							{
-							}
+							catch (ArgumentOutOfRangeException){}
 							_allowClearSavedCaretColumn = true;
 							AdjustTextSelection(nCmdID, selectionAnchorPoint);
 							return VSConstants.S_OK;
 
 						case ARROW_DOWN:
 						case SHIFT_ARROW_DOWN:
-							try
-							{
+							try {
 								_snapshotLine = FindNextLine();
 								MoveCaretToNearestVirtualTabStop();
 							}
-							catch (ArgumentOutOfRangeException)
-							{
-							}
+							catch (ArgumentOutOfRangeException){}
 							_allowClearSavedCaretColumn = true;
 							AdjustTextSelection(nCmdID, selectionAnchorPoint);
 							return VSConstants.S_OK;
@@ -183,29 +166,22 @@ namespace TabSanity
 
 					return NextTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
 				}
-				finally
-				{
+				finally{
 					_isActive = false;
 				}
 			}
 		}
 
-		private void AdjustTextSelection(uint nCmdID, VirtualSnapshotPoint selectionAnchorPoint)
-		{
+		void AdjustTextSelection(uint nCmdID, VirtualSnapshotPoint selectionAnchorPoint) {
 			if (nCmdID % 2 == 0) // nCmdID is even for all shift arrows
-			{
 				// Adjust the text selection if shift is being held
 				TextView.Selection.Select(selectionAnchorPoint, Caret.Position.VirtualBufferPosition);
-			}
 			else if (!TextView.Selection.IsEmpty)
-			{
 				// Turn off selection if a regular arrow was pressed
 				TextView.Selection.Select(TextView.Selection.AnchorPoint, TextView.Selection.AnchorPoint);
-			}
 		}
 
-		private ITextSnapshotLine FindNextLine()
-		{
+		ITextSnapshotLine FindNextLine() {
 			var snapshot = TextView.TextSnapshot;
 			var caretBufferPosition = Caret.Position.BufferPosition;
 			var current = snapshot.GetLineFromPosition(caretBufferPosition.Position);
@@ -215,8 +191,7 @@ namespace TabSanity
 			return next;
 		}
 
-		private void MoveCaretToNearestVirtualTabStop()
-		{
+		void MoveCaretToNearestVirtualTabStop() {
 			if (!_savedCaretColumn.HasValue)
 				return;
 
@@ -225,8 +200,7 @@ namespace TabSanity
 				lastIndentColumn = 0;
 			MoveCaretToVirtualPosition(_savedCaretColumn.Value);
 
-			if (Caret.InVirtualSpace)
-			{
+			if (Caret.InVirtualSpace) {
 				var eol = CaretLine.Length;
 				MoveCaretToVirtualPosition((eol > 0) ? eol : lastIndentColumn);
 				// TODO: lastIndentColumn offset?
@@ -246,19 +220,16 @@ namespace TabSanity
 				MoveCaretToNextTabStop();
 		}
 
-		private void MoveCaretToVirtualPosition(int pos)
-		{
+		void MoveCaretToVirtualPosition(int pos) {
 			Caret.MoveTo(new VirtualSnapshotPoint(_snapshotLine, pos));
 			Caret.EnsureVisible();
 		}
 
-		private void MoveCaretToNextTabStop()
-		{
+		void MoveCaretToNextTabStop() {
 			var caretStartingPosition = Caret.Position.VirtualBufferPosition;
 			var caretStartingColumn = CaretColumn;
 			var lastCaretColumn = -1;
-			while (CaretColumn % IndentSize != 0 && CaretCharIsASpace)
-			{
+			while (CaretColumn % IndentSize != 0 && CaretCharIsASpace) {
 				if (CaretColumn <= lastCaretColumn)
 					break; // Prevent infinite loop in box selection
 
@@ -272,14 +243,12 @@ namespace TabSanity
 			Caret.EnsureVisible();
 		}
 
-		private void MoveCaretToPreviousTabStop()
-		{
+		void MoveCaretToPreviousTabStop() {
 			var caretStartingPosition = Caret.Position.VirtualBufferPosition;
 			var caretStartingColumn = CaretColumn;
 			Caret.MoveToPreviousCaretPosition();
 			var lastCaretColumn = -1;
-			while (CaretColumn % IndentSize != (IndentSize - 1) && CaretCharIsASpace)
-			{
+			while (CaretColumn % IndentSize != (IndentSize - 1) && CaretCharIsASpace) {
 				if (CaretColumn >= lastCaretColumn && lastCaretColumn != -1)
 					break; // Prevent infinite loop on first char of first line or in box selection
 
@@ -288,26 +257,21 @@ namespace TabSanity
 			}
 
 			if (Caret.Position.BufferPosition.Position != 0)
-			{ // Do this for all cases except the first char of the document
+			// Do this for all cases except the first char of the document
 				Caret.MoveToNextCaretPosition();
-			}
 
 			VirtualSnapshotPoint? caretNewPosition = Caret.Position.VirtualBufferPosition;
 			int movedBy = caretStartingColumn - CaretColumn;
-			if (movedBy % IndentSize != 0)
-			{
+			if (movedBy % IndentSize != 0) {
 				// We moved less than a full tab stop length. Only allow this if the cursor started in the middle of a full tab
-				for (int i = 0; i < IndentSize; i++)
-				{
-					if (Caret.Position.BufferPosition.Add(i).GetChar() != ' ')
-					{
+				for (int i = 0; i < IndentSize; i++) {
+					if (Caret.Position.BufferPosition.Add(i).GetChar() != ' ') {
 						caretNewPosition = null;
 						Caret.MoveTo(caretStartingPosition); // Do not align on non-exact tab stops
 						break;
 					}
 				}
-				if (caretNewPosition != null)
-				{
+				if (caretNewPosition != null) {
 					Caret.MoveTo(caretNewPosition.Value); // Go back to original new position
 				}
 			}
@@ -315,10 +279,11 @@ namespace TabSanity
 			Caret.EnsureVisible();
 		}
 
-		public override void Dispose()
-		{
+		public override void Dispose() {
 			Caret.PositionChanged -= CaretOnPositionChanged;
 			base.Dispose();
 		}
+
 	}
+
 }

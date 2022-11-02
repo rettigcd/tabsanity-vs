@@ -1,17 +1,16 @@
 ﻿using System;
 using Microsoft.VisualStudio.Text.Editor;
 
-namespace TabSanity
-{
-	internal class TabOptionsListener : IDisposable
-	{
+namespace TabSanity {
+
+	internal class TabOptionsListener : IDisposable {
+
 		protected IWpfTextView TextView;
 		protected readonly IEditorOptions Options;
 		protected bool ConvertTabsToSpaces;
 		protected int IndentSize;
 
-		public TabOptionsListener(IWpfTextView textView)
-		{
+		public TabOptionsListener(IWpfTextView textView) {
 			TextView = textView;
 			Options = textView.Options;
 
@@ -22,10 +21,8 @@ namespace TabSanity
 			OnIndentSizeOptionChanged();
 		}
 
-		private void OnTextViewOptionChanged(object sender, EditorOptionChangedEventArgs e)
-		{
-			switch (e.OptionId)
-			{
+		void OnTextViewOptionChanged(object sender, EditorOptionChangedEventArgs e) {
+			switch (e.OptionId) {
 				case DefaultOptions.ConvertTabsToSpacesOptionName:
 					OnConvertTabsToSpacesOptionChanged();
 					break;
@@ -36,30 +33,27 @@ namespace TabSanity
 			}
 		}
 
-		protected virtual void OnConvertTabsToSpacesOptionChanged()
-		{
+		protected virtual void OnConvertTabsToSpacesOptionChanged() {
 			_OnConvertTabsToSpacesOptionChanged();
 		}
 
-		private void _OnConvertTabsToSpacesOptionChanged()
-		{
+		void _OnConvertTabsToSpacesOptionChanged() {
 			ConvertTabsToSpaces = Options.GetOptionValue(DefaultOptions.ConvertTabsToSpacesOptionId);
 		}
 
-		private void OnIndentSizeOptionChanged()
-		{
+		void OnIndentSizeOptionChanged() {
 			IndentSize = Options.GetOptionValue(DefaultOptions.IndentSizeOptionId);
 		}
 
-		private void TextViewOnClosed(object sender, EventArgs eventArgs)
-		{
+		void TextViewOnClosed(object sender, EventArgs eventArgs) {
 			Dispose();
 		}
 
-		public virtual void Dispose()
-		{
+		public virtual void Dispose() {
 			TextView.Closed -= TextViewOnClosed;
 			Options.OptionChanged -= OnTextViewOptionChanged;
 		}
+
 	}
+
 }

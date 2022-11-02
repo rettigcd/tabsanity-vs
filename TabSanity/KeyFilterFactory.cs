@@ -8,33 +8,32 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
 
-namespace TabSanity
-{
+namespace TabSanity {
+
 	[Export(typeof(IVsTextViewCreationListener))]
 	[ContentType("text")]
 	[TextViewRole(PredefinedTextViewRoles.Editable)]
-	internal class KeyFilterFactory : IVsTextViewCreationListener
-	{
+	internal class KeyFilterFactory : IVsTextViewCreationListener {
+
 		[Import(typeof(IVsEditorAdaptersFactoryService))]
-		private IVsEditorAdaptersFactoryService _editorFactory;
+		IVsEditorAdaptersFactoryService _editorFactory;
 
 		[Import]
-		private SVsServiceProvider _serviceProvider;
+		SVsServiceProvider _serviceProvider;
 
-		private DisplayWindowHelper _helperFactory;
+		DisplayWindowHelper _helperFactory;
 
 		[ImportingConstructor]
 		internal KeyFilterFactory(
 			ICompletionBroker completionBroker,
 			ISignatureHelpBroker signatureHelpBroker,
 			ILightBulbBroker smartTagBroker,
-			IAsyncQuickInfoBroker quickInfoBroker)
-		{
+			IAsyncQuickInfoBroker quickInfoBroker
+		){
 			_helperFactory = new DisplayWindowHelper(completionBroker, signatureHelpBroker, smartTagBroker, quickInfoBroker);
 		}
 
-		public void VsTextViewCreated(IVsTextView viewAdapter)
-		{
+		public void VsTextViewCreated(IVsTextView viewAdapter) {
 			var view = _editorFactory.GetWpfTextView(viewAdapter);
 			if (view == null)
 				return;
@@ -45,8 +44,7 @@ namespace TabSanity
 			AddCommandFilter(viewAdapter, new BackspaceDeleteKeyFilter(displayHelper, view, _serviceProvider));
 		}
 
-		private static void AddCommandFilter(IVsTextView viewAdapter, KeyFilter commandFilter)
-		{
+		static void AddCommandFilter(IVsTextView viewAdapter, KeyFilter commandFilter) {
 			if (commandFilter.Added) return;
 			//get the view adapter from the editor factory
 			var hr = viewAdapter.AddCommandFilter(commandFilter, out IOleCommandTarget next);
