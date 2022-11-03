@@ -12,8 +12,10 @@ namespace TabSanity {
 
 		int? _savedCaretColumn;
 		ITextSnapshotLine _snapshotLine;
-		object _activeLock = new object();
 		bool _allowClearSavedCaretColumn = true;
+
+		// together _activeLock and _isActive prevents re-entry into TakeAction()
+		object _activeLock = new object();
 		bool _isActive;
 
 		#region Arrow key constants
@@ -53,14 +55,7 @@ namespace TabSanity {
 				var originalSnapshotLine = _snapshotLine;
 				try {
 					_isActive = true;
-					_savedCaretColumn = CaretColumn;
-					_snapshotLine = TextView.TextSnapshot.GetLineFromPosition(Caret.Position.BufferPosition);
-					var caretStartingPosition = Caret.Position.VirtualBufferPosition;
-
-					MoveCaretToNearestVirtualTabStop();
-
-					if (!TextView.Selection.IsEmpty)
-						AdjustTextSelection(0, TextView.Selection.AnchorPoint);
+					TakeAction();
 				}
 				finally {
 					_isActive = false;
@@ -68,6 +63,17 @@ namespace TabSanity {
 					_snapshotLine = originalSnapshotLine;
 				}
 			}
+		}
+
+		void TakeAction() {
+			_savedCaretColumn = CaretColumn;
+			_snapshotLine = TextView.TextSnapshot.GetLineFromPosition(Caret.Position.BufferPosition);
+			// var caretStartingPosition = Caret.Position.VirtualBufferPosition;
+
+			MoveCaretToNearestVirtualTabStop();
+
+			if (!TextView.Selection.IsEmpty)
+				AdjustTextSelection(0, TextView.Selection.AnchorPoint);
 		}
 
 		public override int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
@@ -195,13 +201,13 @@ namespace TabSanity {
 			if (!_savedCaretColumn.HasValue)
 				return;
 
-			var lastIndentColumn = ColumnAfterLeadingSpaces - 1;
+			int lastIndentColumn = ColumnAfterLeadingSpaces - 1;
 			if (lastIndentColumn < 0)
 				lastIndentColumn = 0;
 			MoveCaretToVirtualPosition(_savedCaretColumn.Value);
 
 			if (Caret.InVirtualSpace) {
-				var eol = CaretLine.Length;
+				int eol = CaretLine.Length;
 				MoveCaretToVirtualPosition((eol > 0) ? eol : lastIndentColumn);
 				// TODO: lastIndentColumn offset?
 				return;
@@ -210,7 +216,7 @@ namespace TabSanity {
 			if (CaretColumn > ColumnAfterLeadingSpaces)
 				return;
 
-			var remainder = CaretColumn % IndentSize;
+			int remainder = CaretColumn % IndentSize;
 			if (remainder == 0)
 				return;
 
@@ -227,8 +233,8 @@ namespace TabSanity {
 
 		void MoveCaretToNextTabStop() {
 			var caretStartingPosition = Caret.Position.VirtualBufferPosition;
-			var caretStartingColumn = CaretColumn;
-			var lastCaretColumn = -1;
+			int caretStartingColumn = CaretColumn;
+			int lastCaretColumn = -1;
 			while (CaretColumn % IndentSize != 0 && CaretCharIsASpace) {
 				if (CaretColumn <= lastCaretColumn)
 					break; // Prevent infinite loop in box selection
@@ -245,9 +251,9 @@ namespace TabSanity {
 
 		void MoveCaretToPreviousTabStop() {
 			var caretStartingPosition = Caret.Position.VirtualBufferPosition;
-			var caretStartingColumn = CaretColumn;
+			int caretStartingColumn = CaretColumn;
 			Caret.MoveToPreviousCaretPosition();
-			var lastCaretColumn = -1;
+			int lastCaretColumn = -1;
 			while (CaretColumn % IndentSize != (IndentSize - 1) && CaretCharIsASpace) {
 				if (CaretColumn >= lastCaretColumn && lastCaretColumn != -1)
 					break; // Prevent infinite loop on first char of first line or in box selection

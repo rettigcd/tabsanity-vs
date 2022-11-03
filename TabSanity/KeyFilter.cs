@@ -7,6 +7,9 @@ using IServiceProvider = System.IServiceProvider;
 
 namespace TabSanity {
 
+	/// <summary>
+	/// Contains properties identifying what kind of text the Caret is at.
+	/// </summary>
 	internal abstract class KeyFilter : TabOptionsListener, IOleCommandTarget {
 
 		internal bool Added = false;
@@ -19,25 +22,29 @@ namespace TabSanity {
 
 		protected ITextCaret Caret => TextView.Caret;
 
+		// Caret is on a space character
 		protected bool CaretCharIsASpace
 			=> Caret.Position.BufferPosition.Position < Caret.Position.BufferPosition.Snapshot.Length
 			&& Caret.Position.BufferPosition.GetChar() == ' ';
 
-		protected int CaretColumn => Caret.Position.BufferPosition.Position - CaretLine.Start.Position;
+		/// <summary>
+		/// Current Caret Column
+		/// </summary>
+		protected int CaretColumn => Caret.Position.BufferPosition.Position - CaretLine.Start.Position; // remove start-of-line offset
 
-		protected bool CaretIsWithinCodeRange => CaretColumn > ColumnAfterLeadingSpaces;
+		protected bool CaretIsWithinCodeRange => ColumnAfterLeadingSpaces < CaretColumn; // Caret is after column with last leading space
 
 		protected ITextViewLine CaretLine => Caret.ContainingTextViewLine;
 
 		protected bool CaretPrevCharIsASpace
-			=> Caret.Position.BufferPosition.Position > 0
+			=> 0 < Caret.Position.BufferPosition.Position
 			&& Caret.Position.BufferPosition.Subtract(1).GetChar() == ' ';
 
 		protected int ColumnAfterLeadingSpaces {
 			get {
 				var snapshot = CaretLine.Snapshot;
-				var column = 0;
-				for (var i = CaretLine.Start.Position; i < CaretLine.End.Position; i++) {
+				int column = 0;
+				for (int i = CaretLine.Start.Position; i < CaretLine.End.Position; i++) {
 					column++;
 					if (snapshot[i] != ' ') break;
 				}
@@ -48,8 +55,8 @@ namespace TabSanity {
 		protected int ColumnBeforeTrailingSpaces {
 			get {
 				var snapshot = CaretLine.Snapshot;
-				var column = CaretLine.Length;
-				for (var i = CaretLine.End.Position - 1; i > CaretLine.Start.Position; i--) {
+				int column = CaretLine.Length;
+				for (int i = CaretLine.End.Position - 1; i > CaretLine.Start.Position; i--) {
 					column--;
 					if (snapshot[i] != ' ') break;
 				}

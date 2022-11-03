@@ -47,7 +47,7 @@ namespace TabSanity {
 		static void AddCommandFilter(IVsTextView viewAdapter, KeyFilter commandFilter) {
 			if (commandFilter.Added) return;
 			//get the view adapter from the editor factory
-			var hr = viewAdapter.AddCommandFilter(commandFilter, out IOleCommandTarget next);
+			int hr = viewAdapter.AddCommandFilter(commandFilter, out IOleCommandTarget next);
 
 			if (hr != VSConstants.S_OK) return;
 			commandFilter.Added = true;

@@ -71,14 +71,14 @@ namespace TabSanity {
 			ReplaceVirtualSpaces();
 
 			var snapshot = TextView.TextBuffer.CurrentSnapshot;
-			var caretPos = Caret.Position.BufferPosition.Position;
+			int caretPos = Caret.Position.BufferPosition.Position;
 
 			// Determine the number of spaces until the previous tab stop.
-			var spacesToRemove = ((CaretColumn - 1) % IndentSize) + 1;
+			int spacesToRemove = ((CaretColumn - 1) % IndentSize) + 1;
 
 			// Make sure we only delete spaces.
-			for (var i = 0; i < spacesToRemove; i++) {
-				var snapshotPos = caretPos - 1 - i;
+			for (int i = 0; i < spacesToRemove; i++) {
+				int snapshotPos = caretPos - 1 - i;
 				if (snapshotPos < 0 || snapshot[snapshotPos] != ' ') {
 					spacesToRemove = i;
 					break;
@@ -100,14 +100,14 @@ namespace TabSanity {
 				return false;
 
 			var snapshot = TextView.TextBuffer.CurrentSnapshot;
-			var caretPos = Caret.Position.BufferPosition.Position;
+			int caretPos = Caret.Position.BufferPosition.Position;
 
 			// Determine the number of spaces until the next tab stop.
-			var spacesToRemove = IndentSize - (CaretColumn % IndentSize);
+			int spacesToRemove = IndentSize - (CaretColumn % IndentSize);
 
 			// Make sure we only delete spaces.
-			for (var i = 0; i < spacesToRemove; i++) {
-				var snapshotPos = caretPos + i;
+			for (int i = 0; i < spacesToRemove; i++) {
+				int snapshotPos = caretPos + i;
 				if (snapshotPos >= snapshot.Length || snapshot[snapshotPos] != ' ') {
 					spacesToRemove = i;
 					break;
